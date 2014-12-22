@@ -71,6 +71,8 @@ public class PrisonAgent extends Agent {
 				.and(MessageTemplate
 						.MatchProtocol(FIPANames.InteractionProtocol.FIPA_QUERY),
 						MessageTemplate.MatchPerformative(ACLMessage.QUERY_IF));
+		GameInfo gameinfo;
+		
 		AchieveREResponder arer = new AchieveREResponder(this,
 				queryMessageTemplate) {
 			@Override
@@ -78,12 +80,15 @@ public class PrisonAgent extends Agent {
 					throws NotUnderstoodException, RefuseException {
 				ACLMessage agree = request.createReply();
 				agree.setPerformative(ACLMessage.AGREE);
+				print("handled request successfully");
 				return agree;
 			}
 		};
 		
 		//TODO CHANGE BEHAVIOR
-		arer.registerPrepareResultNotification(new TestBehavior());
+		arer.registerPrepareResultNotification(new StrategyBehavior());
+		
+		print("created queryProtocol");
 		return arer;
 	}
 
@@ -111,7 +116,7 @@ public class PrisonAgent extends Agent {
 				print("been informed by " + inform.getSender().getName());
 
 				try {
-					Game currGameInfo = (Game) inform.getContentObject();
+					GameInfo currGameInfo = (GameInfo) inform.getContentObject();
 
 					print("round: " + currGameInfo);
 

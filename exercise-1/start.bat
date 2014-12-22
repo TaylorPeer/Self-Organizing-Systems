@@ -1,1 +1,1 @@
-java -cp target/lib/jade-4.3.3.jar;target/classes jade.Boot -gui
+java -cp target/lib/jade-4.3.3.jar;target/classes jade.Boot -gui -agents "p1:at.ac.tuwien.ifs.sos.PrisonAgent;p2:at.ac.tuwien.ifs.sos.PrisonAgent;pm:at.ac.tuwien.ifs.sos.PrisonMasterAgent(p1, p2, 10)"
