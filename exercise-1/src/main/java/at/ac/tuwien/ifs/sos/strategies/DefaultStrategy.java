@@ -1,56 +1,60 @@
 package at.ac.tuwien.ifs.sos.strategies;
 
-import java.io.IOException;
-
-import at.ac.tuwien.ifs.sos.entities.GameInfo;
-import at.ac.tuwien.ifs.sos.entities.GameRound;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.lang.acl.ACLMessage;
-import jade.lang.acl.UnreadableException;
 import jade.proto.AchieveREResponder;
+import at.ac.tuwien.ifs.sos.entities.GameInfo;
+import at.ac.tuwien.ifs.sos.entities.GameRound;
 
 public class DefaultStrategy extends OneShotBehaviour {
 
 	private static final long serialVersionUID = 1L;
+	public GameInfo gameInfo;
+	public GameRound lastRound;
+	public boolean prisonerWillConfess;
 
-	public DefaultStrategy() {
+	public void setConfession() {
+		prisonerWillConfess = true;
 	}
 
-	private void print(String text) {
-		System.out.println(myAgent.getAID().getLocalName()
-				+ " [DefaultStrategy] - " + text);
+	protected void print(String text) {
+		StringBuilder sb = new StringBuilder();
+		sb.append("\t");
+		sb.append(myAgent.getAID().getLocalName());
+		sb.append(": ");
+		sb.append(text);
+		sb.append(" ");
+		sb.append("(" + this.getClass().getSimpleName() + ")");
+
+		System.out.println(sb.toString());
 	}
 
 	@Override
 	public void action() {
 
 		AchieveREResponder p = (AchieveREResponder) parent;
-
 		ACLMessage query = (ACLMessage) getDataStore().get(p.REQUEST_KEY);
 
 		try {
-			GameInfo gameInfo = (GameInfo) query.getContentObject();
 
+			// Set gameInfo and lastRound variables, which are used by some strategies
+			gameInfo = (GameInfo) query.getContentObject();
 			if (gameInfo != null) {
-				GameRound lastRound = gameInfo.getLastRound();
-				print("received lastRound: " + lastRound);
+				lastRound = gameInfo.getLastRound();
 			}
 
-			ACLMessage inform = query.createReply();
+			setConfession();
 
+			ACLMessage inform = query.createReply();
 			inform.setPerformative(ACLMessage.INFORM);
-			inform.setContentObject(new Boolean(true));
+			inform.setContentObject(prisonerWillConfess);
 
 			getDataStore().put(p.RESULT_NOTIFICATION_KEY, inform);
 
-			print("response: " + true);
+			print(prisonerWillConfess ? "guity" : "not guilty");
 
-		} catch (UnreadableException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
-
 	}
-
 }

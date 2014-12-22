@@ -5,12 +5,11 @@ import java.util.Stack;
 
 import jade.core.AID;
 
-public class GameInfo implements Serializable{
+public class GameInfo implements Serializable {
+
 	private static final long serialVersionUID = 1L;
-	
 	private AID prisoner1;
 	private AID prisoner2;
-
 	private int iterations;
 	private Stack<GameRound> rounds = new Stack<GameRound>();
 
@@ -48,26 +47,22 @@ public class GameInfo implements Serializable{
 	public void pushRound(GameRound round) {
 		rounds.push(round);
 	}
-	
-	public Stack<GameRound> getRounds(){
+
+	public Stack<GameRound> getRounds() {
 		return rounds;
 	}
-	
-	public GameRound getLastRound(){
-		if(rounds.isEmpty()){
+
+	public GameRound getLastRound() {
+		if (rounds.isEmpty()) {
 			return null;
 		}
-		
 		return rounds.peek();
 	}
-	
-
 
 	@Override
 	public String toString() {
-		return "GameInfo [prisoner1=" + prisoner1 + ", prisoner2=" + prisoner2
-				+ ", iterations=" + iterations + ", rounds=" + rounds + "]";
+		return "GameInfo [prisoner1=" + prisoner1 + ", prisoner2=" + prisoner2 + ", iterations=" + iterations
+				+ ", rounds=" + rounds + "]";
 	}
-	
-	
+
 }

@@ -19,12 +19,12 @@ import jade.lang.acl.ACLMessage;
 import jade.proto.AchieveREInitiator;
 
 public class PrisonGameMasterAgent extends Agent {
+
 	private static final long serialVersionUID = 1L;
 	private GameInfo gameInfo;
 
 	private void print(String text) {
-		System.out.println("PRISONGAME: " + getAID().getLocalName() + " - "
-				+ text);
+		System.out.println("PRISONGAME: " + getAID().getLocalName() + " - " + text);
 	}
 
 	@Override
@@ -37,7 +37,8 @@ public class PrisonGameMasterAgent extends Agent {
 
 		SequentialBehaviour gameRoundBehaviours = new SequentialBehaviour(this);
 
-		for (int i = 0; i < gameInfo.getIterations(); i++) {
+		int iterationCount = gameInfo.getIterations();
+		for (int iterations = 0; iterations < iterationCount; iterations++) {
 			gameRoundBehaviours.addSubBehaviour(new RoundBehaviour(this, null));
 		}
 
@@ -47,7 +48,7 @@ public class PrisonGameMasterAgent extends Agent {
 
 		addBehaviour(behaviour);
 
-		print("setup complete");
+		print("Setup complete");
 	}
 
 	private void handleArguments() {
@@ -93,6 +94,7 @@ public class PrisonGameMasterAgent extends Agent {
 	}
 
 	private class RoundBehaviour extends AchieveREInitiator {
+
 		private static final long serialVersionUID = 1L;
 
 		public RoundBehaviour(Agent a, ACLMessage msg) {
@@ -115,7 +117,7 @@ public class PrisonGameMasterAgent extends Agent {
 				e1.printStackTrace();
 			}
 
-			print("starting new round...");
+			print("Starting new round:");
 			try {
 				Vector<ACLMessage> result = new Vector<ACLMessage>(1);
 				result.add(query);
@@ -131,8 +133,7 @@ public class PrisonGameMasterAgent extends Agent {
 			if (failure.getSender().equals(myAgent.getAMS()))
 				print("Responder does not exist");
 			else
-				print("Agent failed to perform the requested action (agent: "
-						+ failure.getSender().getName());
+				print("Agent failed to perform the requested action (agent: " + failure.getSender().getName());
 		}
 
 		@Override
@@ -159,7 +160,7 @@ public class PrisonGameMasterAgent extends Agent {
 
 				gameInfo.pushRound(currentRound);
 
-				print("ROUND FINISHED: " + currentRound);
+				print("ROUND FINISHED: " + currentRound + "\n");
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -167,6 +168,7 @@ public class PrisonGameMasterAgent extends Agent {
 	}
 
 	private class EndGameBehaviour extends OneShotBehaviour {
+
 		private static final long serialVersionUID = 1L;
 
 		private EndGameBehaviour(Agent a) {
@@ -200,18 +202,13 @@ public class PrisonGameMasterAgent extends Agent {
 
 			print("RESULT: ");
 
-			print(gameInfo.getPrisoner1().getLocalName() + " serves " + years1
-					+ " years");
-			print(gameInfo.getPrisoner2().getLocalName() + " serves " + years2
-					+ " years");
+			print(gameInfo.getPrisoner1().getLocalName() + " serves " + years1 + " years");
+			print(gameInfo.getPrisoner2().getLocalName() + " serves " + years2 + " years");
 
 			if (years1 > years2) {
-				print("The winner is: "
-						+ gameInfo.getPrisoner2().getLocalName());
-
+				print("The winner is: " + gameInfo.getPrisoner2().getLocalName());
 			} else if (years1 < years2) {
-				print("The winner is: "
-						+ gameInfo.getPrisoner1().getLocalName());
+				print("The winner is: " + gameInfo.getPrisoner1().getLocalName());
 			} else {
 				print("The game is a draw!");
 			}

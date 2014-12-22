@@ -2,7 +2,8 @@ package at.ac.tuwien.ifs.sos.entities;
 
 import jade.util.leap.Serializable;
 
-public class GameRound implements Serializable{
+public class GameRound implements Serializable {
+
 	private static final long serialVersionUID = 1L;
 	private int id;
 	private boolean confession1;
@@ -45,9 +46,7 @@ public class GameRound implements Serializable{
 
 	@Override
 	public String toString() {
-		return "GameRound [confession1=" + confession1
-				+ ", confession2=" + confession2 + "]";
+		return "GameRound [confession1=" + confession1 + ", confession2=" + confession2 + "]";
 	}
-	
 
 }
