@@ -1,4 +1,4 @@
-package at.ac.tuwien.ifs.sos;
+package at.ac.tuwien.ifs.sos.entities;
 
 import jade.util.leap.Serializable;
 

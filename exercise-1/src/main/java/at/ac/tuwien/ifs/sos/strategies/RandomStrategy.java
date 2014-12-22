@@ -7,8 +7,8 @@ import jade.proto.AchieveREResponder;
 
 import java.io.IOException;
 
-import at.ac.tuwien.ifs.sos.GameInfo;
-import at.ac.tuwien.ifs.sos.GameRound;
+import at.ac.tuwien.ifs.sos.entities.GameInfo;
+import at.ac.tuwien.ifs.sos.entities.GameRound;
 
 public class RandomStrategy extends OneShotBehaviour {
 	private static final long serialVersionUID = 1L;

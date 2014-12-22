@@ -2,8 +2,8 @@ package at.ac.tuwien.ifs.sos.strategies;
 
 import java.io.IOException;
 
-import at.ac.tuwien.ifs.sos.GameInfo;
-import at.ac.tuwien.ifs.sos.GameRound;
+import at.ac.tuwien.ifs.sos.entities.GameInfo;
+import at.ac.tuwien.ifs.sos.entities.GameRound;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.UnreadableException;

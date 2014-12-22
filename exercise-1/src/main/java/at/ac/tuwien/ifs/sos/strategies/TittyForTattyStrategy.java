@@ -7,8 +7,8 @@ import jade.proto.AchieveREResponder;
 
 import java.io.IOException;
 
-import at.ac.tuwien.ifs.sos.GameInfo;
-import at.ac.tuwien.ifs.sos.GameRound;
+import at.ac.tuwien.ifs.sos.entities.GameInfo;
+import at.ac.tuwien.ifs.sos.entities.GameRound;
 
 public class TittyForTattyStrategy extends OneShotBehaviour {
 
@@ -19,7 +19,7 @@ public class TittyForTattyStrategy extends OneShotBehaviour {
 
 	private void print(String text) {
 		System.out.println(myAgent.getAID().getLocalName()
-				+ " [TittyForTattyStrategy] - " + text);
+				+ " [TitForTatStrategy] - " + text);
 	}
 
 	@Override

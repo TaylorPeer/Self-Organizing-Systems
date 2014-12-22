@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Vector;
 
+import at.ac.tuwien.ifs.sos.entities.GameInfo;
+import at.ac.tuwien.ifs.sos.entities.GameRound;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.OneShotBehaviour;
@@ -31,7 +33,6 @@ public class PrisonGameMasterAgent extends Agent {
 		print("New PrisonGameMasterAgent: " + getAID().getName());
 
 		handleArguments();
-
 		registerService();
 
 		SequentialBehaviour gameRoundBehaviours = new SequentialBehaviour(this);
@@ -78,19 +79,18 @@ public class PrisonGameMasterAgent extends Agent {
 		DFAgentDescription agentDescription = new DFAgentDescription();
 		agentDescription.setName(getAID());
 		agentDescription.addServices(serviceDescription);
-			
+
 		try {
 			DFService.register(this, agentDescription);
 		} catch (FIPAException e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	@Override
-	protected void takeDown(){
+	protected void takeDown() {
 		print("PrisonMaster terminated");
 	}
-	
 
 	private class RoundBehaviour extends AchieveREInitiator {
 		private static final long serialVersionUID = 1L;
@@ -129,8 +129,6 @@ public class PrisonGameMasterAgent extends Agent {
 		@Override
 		protected void handleFailure(ACLMessage failure) {
 			if (failure.getSender().equals(myAgent.getAMS()))
-				// FAILURE notification from the JADE runtime: the receiver does
-				// not exist
 				print("Responder does not exist");
 			else
 				print("Agent failed to perform the requested action (agent: "
@@ -217,7 +215,7 @@ public class PrisonGameMasterAgent extends Agent {
 			} else {
 				print("The game is a draw!");
 			}
-			
+
 			doDelete();
 
 		}

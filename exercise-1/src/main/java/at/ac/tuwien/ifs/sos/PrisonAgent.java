@@ -1,5 +1,6 @@
 package at.ac.tuwien.ifs.sos;
 
+import at.ac.tuwien.ifs.sos.strategies.DefaultStrategy;
 import at.ac.tuwien.ifs.sos.strategies.RandomStrategy;
 import at.ac.tuwien.ifs.sos.strategies.TittyForTattyStrategy;
 import jade.core.Agent;
@@ -13,7 +14,10 @@ import jade.proto.AchieveREResponder;
 public class PrisonAgent extends Agent {
 	private static final long serialVersionUID = 1L;
 
-	private boolean defaultStrat;
+	private static final String DEFAULT_STRAT = "default";
+	private static final String RANDOM_STRAT = "random";
+	private static final String TITTAT_STRAT = "tittat";
+	private String strategy;
 
 	private void print(String text) {
 		System.out.println(getAID().getLocalName() + " - " + text);
@@ -26,7 +30,7 @@ public class PrisonAgent extends Agent {
 
 		handleArguments();
 
-		addBehaviour(createQueryProtocol());
+		addBehaviour(createResponder());
 
 		print("setup complete");
 
@@ -37,21 +41,26 @@ public class PrisonAgent extends Agent {
 
 		if (args == null || args.length != 1) {
 			// print("Error: need to supply at least one argument for strategie: <titForTat> or <naive>");
-			print("no or wrong strategie argument; set RandinStrategy");
+			print("no or wrong strategie argument; set default strategy");
+			strategy = DEFAULT_STRAT;
 
-			defaultStrat = true;
 		} else {
 			String strat = (String) args[0];
 
-			print(strat + " , not implemented LOL ; set TitForTatStrategy");
+			// print(strat + " , not implemented LOL ; set TitForTatStrategy");
 
-			defaultStrat = false;
+			if (!strat.equals(RANDOM_STRAT) && !strat.equals(TITTAT_STRAT)) {
+				print("wrong strategie argument; set default strategy");
+				strategy = DEFAULT_STRAT;
+			} else {
+				strategy = strat;
+			}
 
 		}
 
 	}
 
-	private AchieveREResponder createQueryProtocol() {
+	private AchieveREResponder createResponder() {
 		MessageTemplate queryMessageTemplate = MessageTemplate
 				.and(MessageTemplate
 						.MatchProtocol(FIPANames.InteractionProtocol.FIPA_QUERY),
@@ -66,19 +75,19 @@ public class PrisonAgent extends Agent {
 					throws NotUnderstoodException, RefuseException {
 				ACLMessage agree = request.createReply();
 				agree.setPerformative(ACLMessage.AGREE);
-				//print("handled request successfully");
+				// print("handled request successfully");
 				return agree;
 			}
 		};
 
-		// TODO REFACTOR BEHAVIOUR
-		if (defaultStrat) {
+		if (strategy.equals(TITTAT_STRAT)) {
+			arer.registerPrepareResultNotification(new TittyForTattyStrategy());
+		} else if (strategy.equals(RANDOM_STRAT)) {
 			arer.registerPrepareResultNotification(new RandomStrategy());
 		} else {
-			arer.registerPrepareResultNotification(new TittyForTattyStrategy());
+			arer.registerPrepareResultNotification(new DefaultStrategy());
 		}
-
-		print("created queryProtocol");
+		print("set responding strategy to " + strategy);
 		return arer;
 	}
 
