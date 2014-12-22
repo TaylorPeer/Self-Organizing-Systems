@@ -66,7 +66,7 @@ public class PrisonAgent extends Agent {
 					throws NotUnderstoodException, RefuseException {
 				ACLMessage agree = request.createReply();
 				agree.setPerformative(ACLMessage.AGREE);
-				print("handled request successfully");
+				//print("handled request successfully");
 				return agree;
 			}
 		};

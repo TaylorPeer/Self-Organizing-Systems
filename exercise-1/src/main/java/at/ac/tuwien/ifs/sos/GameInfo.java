@@ -49,6 +49,10 @@ public class GameInfo implements Serializable{
 		rounds.push(round);
 	}
 	
+	public Stack<GameRound> getRounds(){
+		return rounds;
+	}
+	
 	public GameRound getLastRound(){
 		if(rounds.isEmpty()){
 			return null;
@@ -56,6 +60,8 @@ public class GameInfo implements Serializable{
 		
 		return rounds.peek();
 	}
+	
+
 
 	@Override
 	public String toString() {

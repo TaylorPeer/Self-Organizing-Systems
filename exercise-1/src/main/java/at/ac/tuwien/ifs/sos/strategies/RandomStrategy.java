@@ -36,14 +36,14 @@ public class RandomStrategy extends OneShotBehaviour {
 			GameRound lastRound = gameInfo.getLastRound();
 			print("received lastRound: " + lastRound);
 
-			Boolean comply = Math.random() < 0.5;
+			Boolean confess = Math.random() < 0.5;
 
-			print("response: comply=" + comply);
+			print("response: confess=" + confess);
 
 			ACLMessage inform = query.createReply();
 
 			inform.setPerformative(ACLMessage.INFORM);
-			inform.setContentObject(comply);
+			inform.setContentObject(confess);
 
 			getDataStore().put(p.RESULT_NOTIFICATION_KEY, inform);
 

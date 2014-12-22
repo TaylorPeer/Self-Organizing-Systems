@@ -45,7 +45,7 @@ public class GameRound implements Serializable{
 
 	@Override
 	public String toString() {
-		return "GameRound [id=" + id + ", confession1=" + confession1
+		return "GameRound [confession1=" + confession1
 				+ ", confession2=" + confession2 + "]";
 	}
 	

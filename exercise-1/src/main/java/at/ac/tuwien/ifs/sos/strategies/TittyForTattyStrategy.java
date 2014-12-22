@@ -40,23 +40,23 @@ public class TittyForTattyStrategy extends OneShotBehaviour {
 			GameRound lastRound = gameInfo.getLastRound();
 			print("received lastRound: " + lastRound);
 
-			Boolean comply;
+			Boolean confess;
 
 			if (lastRound != null) {
 				if (gameInfo.getPrisoner1().equals(myAgent.getAID()))
-					comply = lastRound.getConfession2();
+					confess = lastRound.getConfession2();
 				else
-					comply = lastRound.getConfession1();
+					confess = lastRound.getConfession1();
 			} else {
-				comply = true;
+				confess = true;
 			}
 			
-			print("response: comply=" + comply);
+			print("response: confess=" + confess);
 			
 			ACLMessage inform = query.createReply();
 
 			inform.setPerformative(ACLMessage.INFORM);
-			inform.setContentObject(comply);
+			inform.setContentObject(confess);
 
 			getDataStore().put(p.RESULT_NOTIFICATION_KEY, inform);
 

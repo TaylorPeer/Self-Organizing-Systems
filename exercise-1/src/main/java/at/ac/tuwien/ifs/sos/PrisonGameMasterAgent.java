@@ -1,44 +1,38 @@
 package at.ac.tuwien.ifs.sos;
 
 import java.io.IOException;
-import java.security.acl.NotOwnerException;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Vector;
 
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.OneShotBehaviour;
-import jade.core.behaviours.ParallelBehaviour;
 import jade.core.behaviours.SequentialBehaviour;
-import jade.core.behaviours.TickerBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAException;
 import jade.domain.FIPANames;
 import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.lang.acl.ACLMessage;
-import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
 
-public class PrisonMasterAgent extends Agent {
+public class PrisonGameMasterAgent extends Agent {
 	private static final long serialVersionUID = 1L;
 	private GameInfo gameInfo;
 
 	private void print(String text) {
-		System.out.println("GM " + getAID().getLocalName() + " - " + text);
+		System.out.println("PRISONGAME: " + getAID().getLocalName() + " - "
+				+ text);
 	}
 
 	@Override
 	protected void setup() {
 
-		print("New PrisonMaster: " + getAID().getName());
+		print("New PrisonGameMasterAgent: " + getAID().getName());
 
 		handleArguments();
 
 		registerService();
-		
 
 		SequentialBehaviour gameRoundBehaviours = new SequentialBehaviour(this);
 
@@ -52,21 +46,19 @@ public class PrisonMasterAgent extends Agent {
 
 		addBehaviour(behaviour);
 
-		
 		print("setup complete");
 	}
-	
 
 	private void handleArguments() {
 		Object[] args = getArguments();
-		
-		 if (args == null || args.length < 3 || args.length > 3) {
-	            print("Need to supply the names of the two prisoner agents and the number of iterations.");
 
-	            doDelete();
+		if (args == null || args.length < 3 || args.length > 3) {
+			print("Need to supply the names of the two prisoner agents and the number of iterations.");
 
-	            return;
-	        }
+			doDelete();
+
+			return;
+		}
 
 		AID prisoner1 = new AID((String) args[0], AID.ISLOCALNAME);
 		AID prisoner2 = new AID((String) args[1], AID.ISLOCALNAME);
@@ -74,7 +66,7 @@ public class PrisonMasterAgent extends Agent {
 		int iterations = Integer.parseInt((String) args[2]);
 
 		gameInfo = new GameInfo(prisoner1, prisoner2, iterations);
-		
+
 		print("gameInfo set to: " + gameInfo);
 	}
 
@@ -86,13 +78,19 @@ public class PrisonMasterAgent extends Agent {
 		DFAgentDescription agentDescription = new DFAgentDescription();
 		agentDescription.setName(getAID());
 		agentDescription.addServices(serviceDescription);
-
+			
 		try {
 			DFService.register(this, agentDescription);
 		} catch (FIPAException e) {
 			e.printStackTrace();
 		}
 	}
+	
+	@Override
+	protected void takeDown(){
+		print("PrisonMaster terminated");
+	}
+	
 
 	private class RoundBehaviour extends AchieveREInitiator {
 		private static final long serialVersionUID = 1L;
@@ -106,19 +104,18 @@ public class PrisonMasterAgent extends Agent {
 			ACLMessage query = new ACLMessage(ACLMessage.QUERY_IF);
 			query.addReceiver(gameInfo.getPrisoner1());
 			query.addReceiver(gameInfo.getPrisoner2());
-			
+
 			query.setProtocol(FIPANames.InteractionProtocol.FIPA_QUERY);
 			query.setReplyByDate(new Date(System.currentTimeMillis() + 10000));
-			
+
 			try {
 				query.setContentObject(gameInfo);
-				
-				
+
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
-			
-			print("prepared request to prisoners");
+
+			print("starting new round...");
 			try {
 				Vector<ACLMessage> result = new Vector<ACLMessage>(1);
 				result.add(query);
@@ -128,7 +125,6 @@ public class PrisonMasterAgent extends Agent {
 				return null;
 			}
 		}
-
 
 		@Override
 		protected void handleFailure(ACLMessage failure) {
@@ -145,8 +141,8 @@ public class PrisonMasterAgent extends Agent {
 		protected void handleAllResultNotifications(Vector notifications) {
 
 			try {
-				print("handleAllResultNotifications with notif count: "
-						+ notifications.size());
+				// print("handleAllResultNotifications with notif count: "
+				// + notifications.size());
 				GameRound currentRound = new GameRound();
 
 				ACLMessage inform1 = (ACLMessage) notifications.get(0);
@@ -162,7 +158,7 @@ public class PrisonMasterAgent extends Agent {
 					currentRound.setConfession1(guilty2);
 					currentRound.setConfession2(guilty1);
 				}
-				
+
 				gameInfo.pushRound(currentRound);
 
 				print("ROUND FINISHED: " + currentRound);
@@ -181,7 +177,49 @@ public class PrisonMasterAgent extends Agent {
 
 		@Override
 		public void action() {
-			print("GAME ENDED YEY");
+			print("GAME ENDED; calculating..");
+
+			int years1 = 0;
+			int years2 = 0;
+
+			final int BOTH_BETRAYED = 2;
+			final int ONE_BETRAYED = 3;
+			final int NONE_BETRAYED = 1;
+
+			for (GameRound round : gameInfo.getRounds()) {
+				if (round.getConfession1() && round.getConfession2()) {
+					years1 += BOTH_BETRAYED;
+					years2 += BOTH_BETRAYED;
+				} else if (round.getConfession1() && !round.getConfession2()) {
+					years1 += ONE_BETRAYED;
+				} else if (!round.getConfession1() && round.getConfession2()) {
+					years2 += ONE_BETRAYED;
+				} else {
+					years1 += NONE_BETRAYED;
+					years2 += NONE_BETRAYED;
+				}
+			}
+
+			print("RESULT: ");
+
+			print(gameInfo.getPrisoner1().getLocalName() + " serves " + years1
+					+ " years");
+			print(gameInfo.getPrisoner2().getLocalName() + " serves " + years2
+					+ " years");
+
+			if (years1 > years2) {
+				print("The winner is: "
+						+ gameInfo.getPrisoner2().getLocalName());
+
+			} else if (years1 < years2) {
+				print("The winner is: "
+						+ gameInfo.getPrisoner1().getLocalName());
+			} else {
+				print("The game is a draw!");
+			}
+			
+			doDelete();
+
 		}
 	}
 
