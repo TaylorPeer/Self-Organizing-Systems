@@ -1,25 +1,19 @@
 package at.ac.tuwien.ifs.sos;
 
-import jade.content.ContentElement;
-import jade.core.AID;
+import at.ac.tuwien.ifs.sos.strategies.RandomStrategy;
+import at.ac.tuwien.ifs.sos.strategies.TittyForTattyStrategy;
 import jade.core.Agent;
-import jade.core.behaviours.ParallelBehaviour;
-import jade.domain.DFService;
-import jade.domain.FIPAException;
 import jade.domain.FIPANames;
-import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.NotUnderstoodException;
 import jade.domain.FIPAAgentManagement.RefuseException;
-import jade.domain.FIPAAgentManagement.SearchConstraints;
-import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
-import jade.lang.acl.UnreadableException;
 import jade.proto.AchieveREResponder;
-import jade.proto.SubscriptionInitiator;
 
 public class PrisonAgent extends Agent {
 	private static final long serialVersionUID = 1L;
+
+	private boolean defaultStrat;
 
 	private void print(String text) {
 		System.out.println(getAID().getLocalName() + " - " + text);
@@ -30,39 +24,30 @@ public class PrisonAgent extends Agent {
 
 		print("Started PrisonAgent: " + getAID().getName());
 
-		// TODO arguments and change behavior
+		handleArguments();
 
-		DFAgentDescription gamemasterServiceTemplate = new DFAgentDescription();
-		ServiceDescription gamemasterServiceTemplateSD = new ServiceDescription();
-		gamemasterServiceTemplateSD.setType("prisonMaster");
-		gamemasterServiceTemplate.addServices(gamemasterServiceTemplateSD);
-		SearchConstraints sc = new SearchConstraints();
-		sc.setMaxResults(1L);
-		DFAgentDescription[] results = null;
+		addBehaviour(createQueryProtocol());
 
-		try {
-			results = DFService.searchUntilFound(this, getDefaultDF(),
-					gamemasterServiceTemplate, sc, 10000L);
-
-		} catch (FIPAException e) {
-			e.printStackTrace();
-		}
-		if (results == null) {
-			System.out.println("ERROR, didnt find prisonmaster");
-			return;
-		}
-		DFAgentDescription dfd = results[0];
-		AID gamemasterAID = dfd.getName();
-
-		ParallelBehaviour behavior = new ParallelBehaviour(this,
-				ParallelBehaviour.WHEN_ALL);
-
-		behavior.addSubBehaviour(createQueryProtocol());
-		behavior.addSubBehaviour(createSubscriptionProtocol(gamemasterAID));
-
-		addBehaviour(behavior);
-		
 		print("setup complete");
+
+	}
+
+	private void handleArguments() {
+		Object[] args = getArguments();
+
+		if (args == null || args.length != 1) {
+			// print("Error: need to supply at least one argument for strategie: <titForTat> or <naive>");
+			print("no or wrong strategie argument; set RandinStrategy");
+
+			defaultStrat = true;
+		} else {
+			String strat = (String) args[0];
+
+			print(strat + " , not implemented LOL ; set TitForTatStrategy");
+
+			defaultStrat = false;
+
+		}
 
 	}
 
@@ -71,10 +56,11 @@ public class PrisonAgent extends Agent {
 				.and(MessageTemplate
 						.MatchProtocol(FIPANames.InteractionProtocol.FIPA_QUERY),
 						MessageTemplate.MatchPerformative(ACLMessage.QUERY_IF));
-		GameInfo gameinfo;
-		
+
 		AchieveREResponder arer = new AchieveREResponder(this,
 				queryMessageTemplate) {
+			private static final long serialVersionUID = 1L;
+
 			@Override
 			protected ACLMessage handleRequest(ACLMessage request)
 					throws NotUnderstoodException, RefuseException {
@@ -84,47 +70,16 @@ public class PrisonAgent extends Agent {
 				return agree;
 			}
 		};
-		
-		//TODO CHANGE BEHAVIOR
-		arer.registerPrepareResultNotification(new StrategyBehavior());
-		
+
+		// TODO REFACTOR BEHAVIOUR
+		if (defaultStrat) {
+			arer.registerPrepareResultNotification(new RandomStrategy());
+		} else {
+			arer.registerPrepareResultNotification(new TittyForTattyStrategy());
+		}
+
 		print("created queryProtocol");
 		return arer;
 	}
 
-	private SubscriptionInitiator createSubscriptionProtocol(AID gamemasterAID) {
-		ACLMessage subscribeMsg = new ACLMessage(ACLMessage.SUBSCRIBE);
-		subscribeMsg.addReceiver(gamemasterAID);
-		subscribeMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
-		return new SubscriptionInitiator(this, subscribeMsg) {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			protected void handleRefuse(ACLMessage refuse) {
-				print("failed to subscribe to " + refuse.getSender().getName());
-				super.handleRefuse(refuse);
-			}
-
-			@Override
-			protected void handleAgree(ACLMessage agree) {
-				print("agreed to subscribe to " + agree.getSender().getName());
-				super.handleAgree(agree);
-			}
-
-			@Override
-			protected void handleInform(ACLMessage inform) {
-				print("been informed by " + inform.getSender().getName());
-
-				try {
-					GameInfo currGameInfo = (GameInfo) inform.getContentObject();
-
-					print("round: " + currGameInfo);
-
-				} catch (UnreadableException e) {
-					e.printStackTrace();
-				}
-
-			}
-		};
-	}
 }

@@ -3,7 +3,7 @@ package at.ac.tuwien.ifs.sos;
 import jade.util.leap.Serializable;
 
 public class GameRound implements Serializable{
-
+	private static final long serialVersionUID = 1L;
 	private int id;
 	private boolean confession1;
 	private boolean confession2;
@@ -27,7 +27,7 @@ public class GameRound implements Serializable{
 		this.id = id;
 	}
 
-	public boolean isConfession1() {
+	public boolean getConfession1() {
 		return confession1;
 	}
 
@@ -35,7 +35,7 @@ public class GameRound implements Serializable{
 		this.confession1 = confession1;
 	}
 
-	public boolean isConfession2() {
+	public boolean getConfession2() {
 		return confession2;
 	}
 

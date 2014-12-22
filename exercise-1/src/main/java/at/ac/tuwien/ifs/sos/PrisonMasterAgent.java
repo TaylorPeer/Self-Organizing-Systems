@@ -23,9 +23,8 @@ import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
 
 public class PrisonMasterAgent extends Agent {
-
+	private static final long serialVersionUID = 1L;
 	private GameInfo gameInfo;
-	private SubscriptionResponder subscriptionResponder;
 
 	private void print(String text) {
 		System.out.println("GM " + getAID().getLocalName() + " - " + text);
@@ -47,14 +46,8 @@ public class PrisonMasterAgent extends Agent {
 			gameRoundBehaviours.addSubBehaviour(new RoundBehaviour(this, null));
 		}
 
-		ParallelBehaviour runGameBehaviour = new ParallelBehaviour(this,
-				ParallelBehaviour.WHEN_ANY);
-
-		subscriptionResponder = new SubscriptionResponder(this);
-		runGameBehaviour.addSubBehaviour(subscriptionResponder);
-		runGameBehaviour.addSubBehaviour(gameRoundBehaviours);
 		SequentialBehaviour behaviour = new SequentialBehaviour(this);
-		behaviour.addSubBehaviour(runGameBehaviour);
+		behaviour.addSubBehaviour(gameRoundBehaviours);
 		behaviour.addSubBehaviour(new EndGameBehaviour(this));
 
 		addBehaviour(behaviour);
@@ -63,54 +56,6 @@ public class PrisonMasterAgent extends Agent {
 		print("setup complete");
 	}
 	
-
-
-	private class SubscriptionResponder extends
-			jade.proto.SubscriptionResponder {
-		public SubscriptionResponder(Agent a) {
-			super(
-					a,
-					MessageTemplate
-							.and(MessageTemplate
-									.or(MessageTemplate
-											.MatchPerformative(ACLMessage.SUBSCRIBE),
-											MessageTemplate
-													.MatchPerformative(ACLMessage.CANCEL)),
-									MessageTemplate
-											.MatchProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE)));
-		}
-
-		@Override
-		protected ACLMessage handleSubscription(ACLMessage subscription) {
-			try {
-				createSubscription(subscription);
-			} catch (Exception e) {
-				ACLMessage refuse = new ACLMessage(ACLMessage.REFUSE);
-				refuse.addReceiver(subscription.getSender());
-				refuse.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
-				
-				print("SUB subscription request failure from " + subscription.getSender().getLocalName());
-				return refuse;
-			}
-			ACLMessage agree = new ACLMessage(ACLMessage.AGREE);
-			agree.addReceiver(subscription.getSender());
-			agree.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
-			print("SUB subscription request successfull from " + subscription.getSender().getLocalName());
-			return agree;
-		}
-
-		public void notify(ACLMessage inform) {
-			// NOTIFY NEW ROUND TO PRISONERS
-			Vector subs = getSubscriptions();
-			for (int i = 0; i < subs.size(); i++){
-				((jade.proto.SubscriptionResponder.Subscription) subs
-						.elementAt(i)).notify(inform);
-				
-				print("SUB: notifying ..");
-				
-			}
-		}
-	}
 
 	private void handleArguments() {
 		Object[] args = getArguments();
@@ -150,6 +95,7 @@ public class PrisonMasterAgent extends Agent {
 	}
 
 	private class RoundBehaviour extends AchieveREInitiator {
+		private static final long serialVersionUID = 1L;
 
 		public RoundBehaviour(Agent a, ACLMessage msg) {
 			super(a, msg);
@@ -206,7 +152,7 @@ public class PrisonMasterAgent extends Agent {
 				ACLMessage inform1 = (ACLMessage) notifications.get(0);
 				Boolean guilty1 = (Boolean) inform1.getContentObject();
 
-				ACLMessage inform2 = (ACLMessage) notifications.get(0);
+				ACLMessage inform2 = (ACLMessage) notifications.get(1);
 				Boolean guilty2 = (Boolean) inform2.getContentObject();
 
 				if (inform1.getSender().equals(gameInfo.getPrisoner1())) {
@@ -219,11 +165,7 @@ public class PrisonMasterAgent extends Agent {
 				
 				gameInfo.pushRound(currentRound);
 
-				ACLMessage inform = new ACLMessage(ACLMessage.INFORM);
-				inform.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
-
-				inform.setContentObject(currentRound);
-				subscriptionResponder.notify(inform);
+				print("ROUND FINISHED: " + currentRound);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -231,6 +173,8 @@ public class PrisonMasterAgent extends Agent {
 	}
 
 	private class EndGameBehaviour extends OneShotBehaviour {
+		private static final long serialVersionUID = 1L;
+
 		private EndGameBehaviour(Agent a) {
 			super(a);
 		}
