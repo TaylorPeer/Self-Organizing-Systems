@@ -31,14 +31,12 @@ public class TittyForTattyStrategy extends OneShotBehaviour {
 
 		try {
 			GameInfo gameInfo = (GameInfo) query.getContentObject();
-
-			if (gameInfo == null) {
-				print("ERROR: gameInfo = null");
-				return;
+			
+			GameRound lastRound = null;
+			if(gameInfo !=null){
+				lastRound = gameInfo.getLastRound();
+				print("received lastRound: " + lastRound);
 			}
-
-			GameRound lastRound = gameInfo.getLastRound();
-			print("received lastRound: " + lastRound);
 
 			Boolean confess;
 

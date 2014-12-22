@@ -31,13 +31,10 @@ public class DefaultStrategy extends OneShotBehaviour {
 		try {
 			GameInfo gameInfo = (GameInfo) query.getContentObject();
 
-			if (gameInfo == null) {
-				print("ERROR: gameInfo = null");
-				return;
+			if (gameInfo != null) {
+				GameRound lastRound = gameInfo.getLastRound();
+				print("received lastRound: " + lastRound);
 			}
-
-			GameRound lastRound = gameInfo.getLastRound();
-			print("received lastRound: " + lastRound);
 
 			ACLMessage inform = query.createReply();
 
