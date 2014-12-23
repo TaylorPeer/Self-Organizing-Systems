@@ -18,7 +18,7 @@ public class PrisonAgent extends Agent {
 	private static final String STRATEGY_DEFAULT = "default";
 	private static final String STRATEGY_RANDOM = "random";
 	private static final String STRATEGY_RETAILIATION = "retaliation";
-	private String strategy;
+	private String strategy = STRATEGY_DEFAULT;
 
 	private void print(String text) {
 		System.out.println(getAID().getLocalName() + " - " + text);
@@ -34,21 +34,20 @@ public class PrisonAgent extends Agent {
 
 	private void handleArguments() {
 		Object[] args = getArguments();
-
-		if (args == null || args.length != 1) {
-			print("Strategy argument was missing or invalid. Set default strategy");
-			strategy = STRATEGY_DEFAULT;
-		} else {
-			String strat = (String) args[0];
-			if (!strat.equals(STRATEGY_RANDOM) && !strat.equals(STRATEGY_RETAILIATION)) {
-				print("wrong strategie argument; set default strategy");
-				strategy = STRATEGY_DEFAULT;
-			} else {
-				strategy = strat;
+		
+		boolean validStrategy = true;
+		if (args != null && args.length == 1) {
+			strategy = (String) args[0];
+			if (!strategy.equals(STRATEGY_RANDOM) && !strategy.equals(STRATEGY_RETAILIATION)) {
+				validStrategy = false;
 			}
-
+		} else {
+			validStrategy = false;
 		}
-
+		
+		if (!validStrategy) {
+			print("Strategy argument was missing or invalid. Using default strategy");
+		}
 	}
 
 	private AchieveREResponder createResponder() {
@@ -64,7 +63,6 @@ public class PrisonAgent extends Agent {
 			protected ACLMessage handleRequest(ACLMessage request) throws NotUnderstoodException, RefuseException {
 				ACLMessage agree = request.createReply();
 				agree.setPerformative(ACLMessage.AGREE);
-				// print("handled request successfully");
 				return agree;
 			}
 		};
@@ -76,7 +74,7 @@ public class PrisonAgent extends Agent {
 		} else {
 			arer.registerPrepareResultNotification(new DefaultStrategy());
 		}
-		print("set responding strategy to " + strategy);
+		print("Set strategy: " + strategy);
 		return arer;
 	}
 

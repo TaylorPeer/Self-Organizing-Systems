@@ -54,11 +54,9 @@ public class PrisonGameMasterAgent extends Agent {
 	private void handleArguments() {
 		Object[] args = getArguments();
 
-		if (args == null || args.length < 3 || args.length > 3) {
-			print("Need to supply the names of the two prisoner agents and the number of iterations.");
-
+		if (args == null || args.length != 3) {
+			print("Invalid arguments: ");
 			doDelete();
-
 			return;
 		}
 
@@ -69,7 +67,7 @@ public class PrisonGameMasterAgent extends Agent {
 
 		gameInfo = new GameInfo(prisoner1, prisoner2, iterations);
 
-		print("gameInfo set to: " + gameInfo);
+		print("gameInfo set: \n\t" + gameInfo);
 	}
 
 	private void registerService() {
@@ -90,7 +88,7 @@ public class PrisonGameMasterAgent extends Agent {
 
 	@Override
 	protected void takeDown() {
-		print("PrisonMaster terminated");
+		print("PrisonGameMasterAgent terminated");
 	}
 
 	private class RoundBehaviour extends AchieveREInitiator {
@@ -130,18 +128,17 @@ public class PrisonGameMasterAgent extends Agent {
 
 		@Override
 		protected void handleFailure(ACLMessage failure) {
-			if (failure.getSender().equals(myAgent.getAMS()))
-				print("Responder does not exist");
-			else
-				print("Agent failed to perform the requested action (agent: " + failure.getSender().getName());
+			if (failure.getSender().equals(myAgent.getAMS())) {
+				print("Responder not found");
+			} else {
+				print("Agent (" + failure.getSender().getName() + ") was unable to perform the requested action");
+			}
 		}
 
 		@Override
 		protected void handleAllResultNotifications(Vector notifications) {
 
 			try {
-				// print("handleAllResultNotifications with notif count: "
-				// + notifications.size());
 				GameRound currentRound = new GameRound();
 
 				ACLMessage inform1 = (ACLMessage) notifications.get(0);
@@ -177,7 +174,7 @@ public class PrisonGameMasterAgent extends Agent {
 
 		@Override
 		public void action() {
-			print("GAME ENDED; calculating..");
+			print("GAME ENDED; calculating...");
 
 			int years1 = 0;
 			int years2 = 0;
