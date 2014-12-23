@@ -1,0 +1,1 @@
+java -cp target/lib/jade-4.3.3.jar;sos-prison-exercise.jar jade.Boot -agents "prisoner1:at.ac.tuwien.ifs.sos.PrisonAgent(random);prisoner2:at.ac.tuwien.ifs.sos.PrisonAgent(retaliation);pm:at.ac.tuwien.ifs.sos.PrisonGameMasterAgent(prisoner1, prisoner2, 100)"

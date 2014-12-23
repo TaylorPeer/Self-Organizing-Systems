@@ -1,0 +1,1 @@
+java -cp target/lib/jade-4.3.3.jar;target/classes jade.Boot -gui -agents "prisoner1:at.ac.tuwien.ifs.sos.PrisonAgent(tittat);prisoner2:at.ac.tuwien.ifs.sos.PrisonAgent(random);pm:at.ac.tuwien.ifs.sos.PrisonGameMasterAgent(prisoner1, prisoner2, 10)"

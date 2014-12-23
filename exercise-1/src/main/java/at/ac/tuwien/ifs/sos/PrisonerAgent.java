@@ -1,211 +1,81 @@
 package at.ac.tuwien.ifs.sos;
 
-import jade.content.ContentElement;
-import jade.content.lang.Codec;
-import jade.content.lang.sl.SLCodec;
-import jade.content.onto.Ontology;
-import jade.core.AID;
+import at.ac.tuwien.ifs.sos.strategies.DefaultStrategy;
+import at.ac.tuwien.ifs.sos.strategies.RandomStrategy;
+import at.ac.tuwien.ifs.sos.strategies.RetaliationStrategy;
 import jade.core.Agent;
-import jade.core.behaviours.ParallelBehaviour;
-import jade.domain.DFService;
-import jade.domain.FIPAAgentManagement.*;
-import jade.domain.FIPAException;
 import jade.domain.FIPANames;
+import jade.domain.FIPAAgentManagement.NotUnderstoodException;
+import jade.domain.FIPAAgentManagement.RefuseException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREResponder;
-import jade.proto.SubscriptionInitiator;
-
-import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.Iterator;
-
-import at.ac.tuwien.ifs.sos.ontology.GameOntology;
-import at.ac.tuwien.ifs.sos.ontology.Round;
-import at.ac.tuwien.ifs.sos.strategies.AbstractStrategyBehaviour;
 
 public class PrisonerAgent extends Agent {
 
-    private Codec codec = new SLCodec();
-    private Ontology ontology = GameOntology.getInstance();
-    private AbstractStrategyBehaviour usedStrategy = null;
-    private GameHistory game;
+	private static final long serialVersionUID = 1L;
 
-    private void out(String text, Object... args) {
-        System.out.print("[" + getLocalName() + "] ");
-        System.out.println(String.format(text, args));
-    }
+	private static final String STRATEGY_DEFAULT = "default";
+	private static final String STRATEGY_RANDOM = "random";
+	private static final String STRATEGY_RETAILIATION = "retaliation";
+	private String strategy = STRATEGY_DEFAULT;
 
-    @Override
-    protected void setup() {
-        try {
-            out("Starting");
+	private void print(String text) {
+		System.out.println(getAID().getLocalName() + " - " + text);
+	}
 
-            getContentManager().registerLanguage(codec, FIPANames.ContentLanguage.FIPA_SL0);
-            getContentManager().registerOntology(ontology);
+	@Override
+	protected void setup() {
+		print("Started PrisonAgent: " + getAID().getName());
+		handleArguments();
+		addBehaviour(createResponder());
+		print("Setup of PrisonAgent " + getAID().getName() + " complete");
+	}
 
-            game = new GameHistory(getAID(), null, -1);
-            handleArguments();
+	private void handleArguments() {
+		Object[] args = getArguments();
+		
+		boolean validStrategy = true;
+		if (args != null && args.length == 1) {
+			strategy = (String) args[0];
+			if (!strategy.equals(STRATEGY_RANDOM) && !strategy.equals(STRATEGY_RETAILIATION)) {
+				validStrategy = false;
+			}
+		} else {
+			validStrategy = false;
+		}
+		
+		if (!validStrategy) {
+			print("Strategy argument was missing or invalid. Using default strategy");
+		}
+	}
 
-            AID gamemasterAID = getGamemasterService();
+	private AchieveREResponder createResponder() {
+		MessageTemplate queryMessageTemplate = MessageTemplate.and(
+				MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_QUERY),
+				MessageTemplate.MatchPerformative(ACLMessage.QUERY_IF));
 
-            ParallelBehaviour behaviour = new ParallelBehaviour(this, ParallelBehaviour.WHEN_ALL);
-            behaviour.addSubBehaviour(createQueryProtocol());
-            behaviour.addSubBehaviour(createSubscriptionProtocol(gamemasterAID));
+		AchieveREResponder arer = new AchieveREResponder(this, queryMessageTemplate) {
 
-            addBehaviour(behaviour);
-        } catch (FIPAException e) {
-            e.printStackTrace();
+			private static final long serialVersionUID = 1L;
 
-            doDelete();
-        }
-    }
+			@Override
+			protected ACLMessage handleRequest(ACLMessage request) throws NotUnderstoodException, RefuseException {
+				ACLMessage agree = request.createReply();
+				agree.setPerformative(ACLMessage.AGREE);
+				return agree;
+			}
+		};
 
-    private AchieveREResponder createQueryProtocol() {
-        MessageTemplate queryMessageTemplate = MessageTemplate.and(
-                MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_QUERY),
-                MessageTemplate.MatchPerformative(ACLMessage.QUERY_IF));
+		if (strategy.equals(STRATEGY_RETAILIATION)) {
+			arer.registerPrepareResultNotification(new RetaliationStrategy());
+		} else if (strategy.equals(STRATEGY_RANDOM)) {
+			arer.registerPrepareResultNotification(new RandomStrategy());
+		} else {
+			arer.registerPrepareResultNotification(new DefaultStrategy());
+		}
+		print("Set strategy: " + strategy);
+		return arer;
+	}
 
-        AchieveREResponder arer = new AchieveREResponder(this, queryMessageTemplate) {
-            @Override
-            protected ACLMessage handleRequest(ACLMessage request) throws NotUnderstoodException, RefuseException {
-                ACLMessage agree = request.createReply();
-                agree.setPerformative(ACLMessage.AGREE);
-                return agree;
-            }
-        };
-
-        arer.registerPrepareResultNotification(usedStrategy);
-
-        return arer;
-    }
-
-    private SubscriptionInitiator createSubscriptionProtocol(AID gamemasterAID) {
-        ACLMessage subscribeMsg = new ACLMessage(ACLMessage.SUBSCRIBE);
-        subscribeMsg.addReceiver(gamemasterAID);
-        subscribeMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
-
-        return new SubscriptionInitiator(this, subscribeMsg) {
-            @Override
-            protected void handleRefuse(ACLMessage refuse) {
-                out("%s failed to subscribe", refuse.getSender().getName());
-            }
-
-            @Override
-            protected void handleAgree(ACLMessage agree) {
-                out("%s agreed to subscribe", agree.getSender().getName());
-
-                super.handleAgree(agree);
-            }
-
-            @Override
-            protected void handleInform(ACLMessage inform) {
-                out("been informed by %s", inform.getSender().getName());
-
-                ContentElement msgContent = null;
-
-                try {
-                    msgContent = getContentManager().extractContent(inform);
-                } catch (Exception e) {
-                    e.printStackTrace();
-
-                    return;
-                }
-
-                if (!(msgContent instanceof Round)) {
-                    out("ERROR: message content not Round");
-
-                    return;
-                }
-
-                Round lastRound = (Round) msgContent;
-                game.pushRound(lastRound);
-            }
-        };
-    }
-
-    private AID getGamemasterService() throws FIPAException {
-        DFAgentDescription gamemasterServiceTemplate = new DFAgentDescription();
-        ServiceDescription gamemasterServiceTemplateSD = new ServiceDescription();
-        gamemasterServiceTemplateSD.setType("prisoners-dilemma-gamemaster"); // TODO refactor into constant
-        gamemasterServiceTemplateSD.addLanguages(FIPANames.ContentLanguage.FIPA_SL0);
-        gamemasterServiceTemplateSD.addOntologies(ontology.getName());
-        gamemasterServiceTemplate.addServices(gamemasterServiceTemplateSD);
-
-        SearchConstraints sc = new SearchConstraints();
-        sc.setMaxResults(1L);
-
-        DFAgentDescription[] results =
-                DFService.searchUntilFound(this, getDefaultDF(), gamemasterServiceTemplate, sc,
-                        10000L);
-
-        DFAgentDescription dfd = results[0];
-        AID gamemasterAID = dfd.getName();
-
-        // do we need this?
-        Iterator it = dfd.getAllServices();
-        while (it.hasNext()) {
-            ServiceDescription sd = (ServiceDescription) it.next();
-            if (sd.getType().equals("prisoners-dilemma-gamemaster"))
-                out("found the following service: %s by %s", sd.getName(), gamemasterAID.getName());
-        }
-
-        return gamemasterAID;
-    }
-
-    private void handleArguments() {
-        Object[] args = getArguments();
-
-        if (args == null || args.length > 2) {
-            out("Need to supply the strategy which the prisoner should use.");
-
-            doDelete();
-        }
-
-        try {
-            Class clazz = Class.forName((String) args[0]);
-
-            ArrayList<Class> constructorArgumentTypes = new ArrayList<Class>();
-            Constructor constructor;
-
-            constructorArgumentTypes.add(Codec.class);
-            constructorArgumentTypes.add(Ontology.class);
-            constructorArgumentTypes.add(GameHistory.class);
-
-            if (args.length - 1 > 0)
-                for (int i = 1; i < args.length; i++)
-                    constructorArgumentTypes.add(String.class);
-
-
-            constructor = clazz.getConstructor(constructorArgumentTypes.toArray(new Class[0]));
-
-            ArrayList<Object> arguments = new ArrayList<Object>(constructorArgumentTypes.size());
-
-            arguments.add(codec);
-            arguments.add(ontology);
-            arguments.add(game);
-
-            for (int i = 1; i < args.length; i++)
-                arguments.add(args[i]);
-
-            usedStrategy = (AbstractStrategyBehaviour) constructor.newInstance(arguments.toArray());
-        } catch (Exception e) {
-            e.printStackTrace();
-
-            doDelete();
-        }
-
-        if (usedStrategy == null) {
-            out("ERROR: invalid strategy parameter supplied");
-
-            doDelete();
-        }
-
-        out("Using strategy %s", usedStrategy);
-    }
-
-    @Override
-    protected void takeDown() {
-        out("Stopping");
-    }
 }
